@@ -3,7 +3,7 @@ package com.yawa.yawa.model;
 import lombok.Data;
 
 @Data
-public class ForecastRequest {
+public class Location {
     String latitude;
     String longitude;
 }

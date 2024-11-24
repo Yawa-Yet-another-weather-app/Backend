@@ -1,8 +1,9 @@
 package com.yawa.yawa.weather;
 
-import com.yawa.yawa.model.ForecastApiResponse;
-import com.yawa.yawa.model.ForecastRequest;
-import org.springframework.http.ResponseEntity;
+import com.yawa.yawa.model.average.AverageApiResponse;
+import com.yawa.yawa.model.average.AverageWeather;
+import com.yawa.yawa.model.forecast.ForecastApiResponse;
+import com.yawa.yawa.model.Location;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.springframework.http.HttpStatusCode;
@@ -17,51 +18,62 @@ public class WeatherServiceImpl implements WeatherService{
     RestClient restClient = RestClient.create();
 
     @Override
-    public List<WeatherInfo> getWeekForecast(ForecastRequest forecastRequest) {
+    public List<WeatherInfo> getWeekForecast(Location location) {
         ForecastApiResponse apiResponse = restClient.get()
-                .uri(
-                        UriComponentsBuilder
-                            .fromUriString("https://api.open-meteo.com/v1/forecast?latitude={l}&longitude={p}&hourly=temperature_2m&daily=weather_code,sunshine_duration")
-                            .build(forecastRequest.getLatitude(), forecastRequest.getLongitude())
-                )
-                .retrieve()
-                .onStatus(HttpStatusCode::is4xxClientError, (request, response) -> {
-                    throw new IllegalStateException("ForecastRequest: " + forecastRequest + '\n' + "Status code: " + response.getStatusCode());
-                })
-                .body(ForecastApiResponse.class);
+            .uri(
+                    UriComponentsBuilder
+                        .fromUriString("https://api.open-meteo.com/v1/forecast?latitude={l}&longitude={p}&daily=weather_code,temperature_2m_max,temperature_2m_min,sunshine_duration")
+                        .build(location.getLatitude(), location.getLongitude())
+            )
+            .retrieve()
+            .onStatus(HttpStatusCode::is4xxClientError, (request, response) -> {
+                throw new IllegalStateException("Location: " + location + '\n' + "Status code: " + response.getStatusCode());
+            })
+            .body(ForecastApiResponse.class);
 
         List<WeatherInfo> result = new LinkedList<>();
 
-        //var hourIterator = apiResponse.getHourly().getTime().iterator();
-        var temparatureIterator = apiResponse.getHourly().getTemperature_2m().iterator();
-
         var dateIterator = apiResponse.getDaily().getTime().iterator();
         var weatherCodeIterator = apiResponse.getDaily().getWeather_code().iterator();
+        var maxTemperatureIterator = apiResponse.getDaily().getTemperature_2m_max().iterator();
+        var minTemperatureIterator = apiResponse.getDaily().getTemperature_2m_min().iterator();
         var sunshineDurationIterator = apiResponse.getDaily().getSunshine_duration().iterator();
 
         while(dateIterator.hasNext()){
-
             double approximateEnergy = 2.5 * 0.2 * sunshineDurationIterator.next();
-
-            float maxTemperature = temparatureIterator.next();
-            float minTemperature = maxTemperature;
-
-            for(int i = 0; i < 23; i++){
-                float current = temparatureIterator.next();
-
-                if(current < minTemperature)
-                    minTemperature = current;
-                if(current > maxTemperature)
-                    maxTemperature = current;
-            }
-
             result.add(
                     new WeatherInfo(
-                            dateIterator.next(), weatherCodeIterator.next(), minTemperature, maxTemperature, approximateEnergy
+                            dateIterator.next(), weatherCodeIterator.next(), minTemperatureIterator.next(), maxTemperatureIterator.next(), approximateEnergy
                     )
             );
         }
 
         return result;
+    }
+
+    @Override
+    public AverageWeather getAverageWeather(Location location) {
+
+        AverageApiResponse apiResponse = restClient.get()
+            .uri(
+                    UriComponentsBuilder
+                            .fromUriString("https://api.open-meteo.com/v1/forecast?latitude={l}&longitude={p}&hourly=surface_pressure&daily=temperature_2m_max,temperature_2m_min,daylight_duration,rain_sum")
+                            .build(location.getLatitude(), location.getLongitude())
+            )
+            .retrieve()
+            .onStatus(HttpStatusCode::is4xxClientError, (request, response) -> {
+                throw new IllegalStateException("Location: " + location + '\n' + "Status code: " + response.getStatusCode());
+            })
+            .body(AverageApiResponse.class);
+
+        double avgPressure = apiResponse.getHourly().getSurface_pressure().stream().mapToDouble(Double::doubleValue).average().orElse(-1.0);
+        double avgSunExposure =
+                apiResponse.getDaily().getDaylight_duration().stream().mapToDouble(Double::doubleValue).average().orElse(-1.0);
+        double minTemperature = apiResponse.getDaily().getTemperature_2m_min().stream().min(Double::compareTo).orElse(-1.0);
+        double maxTemperature = apiResponse.getDaily().getTemperature_2m_max().stream().max(Double::compareTo).orElse(-1.0);
+        long rainyDays = apiResponse.getDaily().getRain_sum().stream().filter(x -> x > 5.0).count();
+        String description = rainyDays > 3 ? "Rainy" : "Sunny";
+
+        return new AverageWeather(avgPressure, avgSunExposure, minTemperature, maxTemperature, description);
     }
 }
