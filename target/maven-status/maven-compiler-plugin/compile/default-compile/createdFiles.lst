@@ -1,0 +1,11 @@
+com\yawa\yawa\weather\WeatherServiceImpl.class
+com\yawa\yawa\model\forecast\Daily.class
+com\yawa\yawa\model\average\AverageWeather.class
+com\yawa\yawa\model\average\AverageApiResponse.class
+com\yawa\yawa\weather\WeatherController.class
+com\yawa\yawa\model\average\Hourly.class
+com\yawa\yawa\model\forecast\WeatherInfo.class
+com\yawa\yawa\weather\WeatherService.class
+com\yawa\yawa\YawaApplication.class
+com\yawa\yawa\model\average\Daily.class
+com\yawa\yawa\model\forecast\ForecastApiResponse.class
