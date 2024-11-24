@@ -15,7 +15,7 @@ public class WeatherController {
 
     private final WeatherService weatherService;
 
-    @CrossOrigin(origins = "http://localhost:3000")
+    @CrossOrigin(origins = "https://yawa-frontend.onrender.com")
     @GetMapping("/weather/forecast")
     public ResponseEntity<List<WeatherInfo>> getWeekForecast(@RequestParam("latitude") String latitude, @RequestParam("longitude") String longitude){
         try{
@@ -27,7 +27,7 @@ public class WeatherController {
 
     }
 
-    @CrossOrigin(origins = "http://localhost:3000")
+    @CrossOrigin(origins = "https://yawa-frontend.onrender.com")
     @GetMapping("/weather/average")
     public ResponseEntity<AverageWeather> getAverageWeather(@RequestParam("latitude") String latitude, @RequestParam("longitude") String longitude){
         try{
