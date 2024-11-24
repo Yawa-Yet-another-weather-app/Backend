@@ -1,4 +1,4 @@
-package com.yawa.yawa.weather;
+package com.yawa.yawa.model.forecast;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

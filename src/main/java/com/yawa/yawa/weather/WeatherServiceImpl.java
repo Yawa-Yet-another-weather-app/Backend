@@ -3,7 +3,7 @@ package com.yawa.yawa.weather;
 import com.yawa.yawa.model.average.AverageApiResponse;
 import com.yawa.yawa.model.average.AverageWeather;
 import com.yawa.yawa.model.forecast.ForecastApiResponse;
-import com.yawa.yawa.model.Location;
+import com.yawa.yawa.model.forecast.WeatherInfo;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.springframework.http.HttpStatusCode;
@@ -18,16 +18,16 @@ public class WeatherServiceImpl implements WeatherService{
     RestClient restClient = RestClient.create();
 
     @Override
-    public List<WeatherInfo> getWeekForecast(Location location) {
+    public List<WeatherInfo> getWeekForecast(String latitude,String longitude) {
         ForecastApiResponse apiResponse = restClient.get()
             .uri(
                     UriComponentsBuilder
                         .fromUriString("https://api.open-meteo.com/v1/forecast?latitude={l}&longitude={p}&daily=weather_code,temperature_2m_max,temperature_2m_min,sunshine_duration")
-                        .build(location.getLatitude(), location.getLongitude())
+                        .build(latitude, longitude)
             )
             .retrieve()
             .onStatus(HttpStatusCode::is4xxClientError, (request, response) -> {
-                throw new IllegalStateException("Location: " + location + '\n' + "Status code: " + response.getStatusCode());
+                throw new IllegalStateException("Status code: " + response.getStatusCode());
             })
             .body(ForecastApiResponse.class);
 
@@ -52,17 +52,17 @@ public class WeatherServiceImpl implements WeatherService{
     }
 
     @Override
-    public AverageWeather getAverageWeather(Location location) {
+    public AverageWeather getAverageWeather(String latitude,String longitude) {
 
         AverageApiResponse apiResponse = restClient.get()
             .uri(
                     UriComponentsBuilder
                             .fromUriString("https://api.open-meteo.com/v1/forecast?latitude={l}&longitude={p}&hourly=surface_pressure&daily=temperature_2m_max,temperature_2m_min,daylight_duration,rain_sum")
-                            .build(location.getLatitude(), location.getLongitude())
+                            .build(latitude, longitude)
             )
             .retrieve()
             .onStatus(HttpStatusCode::is4xxClientError, (request, response) -> {
-                throw new IllegalStateException("Location: " + location + '\n' + "Status code: " + response.getStatusCode());
+                throw new IllegalStateException("Status code: " + response.getStatusCode());
             })
             .body(AverageApiResponse.class);
 
